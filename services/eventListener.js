@@ -6,11 +6,11 @@ require("dotenv").config();
 
 const BRIDGE_CONTRACT = process.env.OPBNB_BRIDGE_CONTRACT || "0x4200000000000000000000000000000000000010";
 const RPC_URL = process.env.OPBNB_RPC_URL || "wss://opbnb-testnet.nodereal.io/ws/v1/YOUR_API_KEY";
-const POLL_INTERVAL = 12000;
 
+// OP Stack L2StandardBridge event signatures
 const BRIDGE_ABI = [
-  "event DepositFinalized(bytes32 indexed depositId, address indexed from, address indexed to, uint256 amount, bytes data)",
-  "event WithdrawalInitiated(bytes32 indexed withdrawalId, address indexed from, address indexed to, uint256 amount, bytes data)",
+  "event DepositFinalized(address indexed l1Token, address indexed l2Token, address indexed from, address to, uint256 amount, bytes extraData)",
+  "event WithdrawalInitiated(address indexed l1Token, address indexed l2Token, address indexed from, address to, uint256 amount, bytes extraData)",
 ];
 
 let provider;
@@ -77,8 +77,9 @@ function cleanup() {
   }
 }
 
-async function handleDeposit(depositId, from, to, amount, data, event) {
-  console.log(`DepositFinalized: ${depositId} | ${from} -> ${to} | ${ethers.formatEther(amount)} BNB`);
+async function handleDeposit(l1Token, l2Token, from, to, amount, extraData, event) {
+  const isNative = l1Token === "0x0000000000000000000000000000000000000000";
+  console.log(`DepositFinalized: ${from} -> ${to} | ${ethers.formatEther(amount)} ${isNative ? "BNB" : "Token"}`);
 
   const tx = {
     txHash: event.log.transactionHash,
@@ -89,7 +90,7 @@ async function handleDeposit(depositId, from, to, amount, data, event) {
     bridgeDirection: "BSC->opBNB",
     blockNumber: event.log.blockNumber,
     timestamp: Math.floor(Date.now() / 1000),
-    status: "pending",
+    status: "completed",
   };
 
   try {
@@ -108,8 +109,9 @@ async function handleDeposit(depositId, from, to, amount, data, event) {
   }
 }
 
-async function handleWithdrawal(withdrawalId, from, to, amount, data, event) {
-  console.log(`WithdrawalInitiated: ${withdrawalId} | ${from} -> ${to} | ${ethers.formatEther(amount)} BNB`);
+async function handleWithdrawal(l1Token, l2Token, from, to, amount, extraData, event) {
+  const isNative = l1Token === "0x0000000000000000000000000000000000000000";
+  console.log(`WithdrawalInitiated: ${from} -> ${to} | ${ethers.formatEther(amount)} ${isNative ? "BNB" : "Token"}`);
 
   const tx = {
     txHash: event.log.transactionHash,
@@ -120,7 +122,7 @@ async function handleWithdrawal(withdrawalId, from, to, amount, data, event) {
     bridgeDirection: "opBNB->BSC",
     blockNumber: event.log.blockNumber,
     timestamp: Math.floor(Date.now() / 1000),
-    status: "pending",
+    status: "completed",
   };
 
   try {
@@ -142,7 +144,7 @@ async function handleWithdrawal(withdrawalId, from, to, amount, data, event) {
 let analysisCounter = 0;
 async function runPeriodicAnalysis() {
   analysisCounter++;
-  if (analysisCounter % 10 !== 0) return; // Run AI analysis every 10 events
+  if (analysisCounter % 10 !== 0) return;
 
   try {
     const recentTxs = database.getRecentTransactions(20);
@@ -162,7 +164,6 @@ async function runPeriodicAnalysis() {
   }
 }
 
-// Run as standalone service
 if (require.main === module) {
   start().catch(console.error);
 }

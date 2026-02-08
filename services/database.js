@@ -131,6 +131,19 @@ function getRecentAnalyses(limit = 20) {
   return getDb().prepare("SELECT * FROM ai_analysis ORDER BY created_at DESC LIMIT ?").all(limit);
 }
 
+function getLatestAnalysisByType(type, maxAgeSec = 300) {
+  const minTime = Math.floor(Date.now() / 1000) - maxAgeSec;
+  const row = getDb().prepare(
+    "SELECT * FROM ai_analysis WHERE analysis_type = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 1"
+  ).get(type, minTime);
+  if (!row) return null;
+  try {
+    return JSON.parse(row.result);
+  } catch {
+    return null;
+  }
+}
+
 // --- Alerts ---
 
 function insertAlert(alert) {
@@ -174,6 +187,7 @@ module.exports = {
   getVolumeOverTime,
   insertAnalysis,
   getRecentAnalyses,
+  getLatestAnalysisByType,
   insertAlert,
   getAlerts,
   markAlertRead,

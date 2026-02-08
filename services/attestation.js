@@ -11,16 +11,24 @@ const ATTESTATION_ABI = [
 
 let bscContract, opbnbContract;
 
+function isValidAddress(addr) {
+  return addr && /^0x[0-9a-fA-F]{40}$/.test(addr);
+}
+
 function getContracts() {
-  if (!bscContract && process.env.ATTESTATION_CONTRACT_BSC && process.env.ATTESTATION_PRIVATE_KEY) {
-    const bscProvider = new ethers.JsonRpcProvider(process.env.BSC_RPC_URL);
-    const bscWallet = new ethers.Wallet(process.env.ATTESTATION_PRIVATE_KEY, bscProvider);
-    bscContract = new ethers.Contract(process.env.ATTESTATION_CONTRACT_BSC, ATTESTATION_ABI, bscWallet);
-  }
-  if (!opbnbContract && process.env.ATTESTATION_CONTRACT_OPBNB && process.env.ATTESTATION_PRIVATE_KEY) {
-    const opbnbProvider = new ethers.JsonRpcProvider(process.env.OPBNB_HTTP_RPC_URL);
-    const opbnbWallet = new ethers.Wallet(process.env.ATTESTATION_PRIVATE_KEY, opbnbProvider);
-    opbnbContract = new ethers.Contract(process.env.ATTESTATION_CONTRACT_OPBNB, ATTESTATION_ABI, opbnbWallet);
+  try {
+    if (!bscContract && isValidAddress(process.env.ATTESTATION_CONTRACT_BSC) && process.env.ATTESTATION_PRIVATE_KEY && process.env.BSC_RPC_URL) {
+      const bscProvider = new ethers.JsonRpcProvider(process.env.BSC_RPC_URL);
+      const bscWallet = new ethers.Wallet(process.env.ATTESTATION_PRIVATE_KEY, bscProvider);
+      bscContract = new ethers.Contract(process.env.ATTESTATION_CONTRACT_BSC, ATTESTATION_ABI, bscWallet);
+    }
+    if (!opbnbContract && isValidAddress(process.env.ATTESTATION_CONTRACT_OPBNB) && process.env.ATTESTATION_PRIVATE_KEY && process.env.OPBNB_HTTP_RPC_URL) {
+      const opbnbProvider = new ethers.JsonRpcProvider(process.env.OPBNB_HTTP_RPC_URL);
+      const opbnbWallet = new ethers.Wallet(process.env.ATTESTATION_PRIVATE_KEY, opbnbProvider);
+      opbnbContract = new ethers.Contract(process.env.ATTESTATION_CONTRACT_OPBNB, ATTESTATION_ABI, opbnbWallet);
+    }
+  } catch (err) {
+    console.error("Failed to initialize attestation contracts:", err.message);
   }
   return { bscContract, opbnbContract };
 }
