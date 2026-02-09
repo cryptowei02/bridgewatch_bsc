@@ -176,6 +176,35 @@ function markAlertRead(id) {
   return getDb().prepare("UPDATE alerts SET is_read = 1 WHERE id = ?").run(id);
 }
 
+// --- Agent Conversations ---
+
+function insertConversationMessage(msg) {
+  const stmt = getDb().prepare(`
+    INSERT INTO agent_conversations (conversation_id, role, content, tool_calls)
+    VALUES (?, ?, ?, ?)
+  `);
+  return stmt.run(
+    msg.conversationId, msg.role, msg.content,
+    msg.toolCalls ? JSON.stringify(msg.toolCalls) : null
+  );
+}
+
+function getConversationMessages(conversationId, limit = 100) {
+  return getDb().prepare(
+    "SELECT * FROM agent_conversations WHERE conversation_id = ? ORDER BY created_at ASC LIMIT ?"
+  ).all(conversationId, limit);
+}
+
+function getRecentConversations(limit = 20) {
+  return getDb().prepare(`
+    SELECT conversation_id, MAX(created_at) as last_active, COUNT(*) as message_count
+    FROM agent_conversations
+    GROUP BY conversation_id
+    ORDER BY last_active DESC
+    LIMIT ?
+  `).all(limit);
+}
+
 module.exports = {
   init,
   getDb,
@@ -191,4 +220,7 @@ module.exports = {
   insertAlert,
   getAlerts,
   markAlertRead,
+  insertConversationMessage,
+  getConversationMessages,
+  getRecentConversations,
 };

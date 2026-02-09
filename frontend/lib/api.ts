@@ -101,3 +101,38 @@ export async function getInsights() {
 export async function getHealth() {
   return fetchAPI<{ status: string; timestamp: number; service: string }>("/health");
 }
+
+// --- Agent Chat ---
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface ToolAction {
+  tool: string;
+  input: Record<string, unknown>;
+}
+
+export interface AgentResponse {
+  reply: string;
+  toolActions: ToolAction[];
+  conversationId: string | null;
+}
+
+export async function sendAgentMessage(
+  message: string,
+  history: ChatMessage[] = [],
+  conversationId?: string
+): Promise<AgentResponse> {
+  const res = await fetch(`${API_BASE}/agent/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, history, conversationId }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Request failed" }));
+    throw new Error(err.error || `API error: ${res.status}`);
+  }
+  return res.json();
+}

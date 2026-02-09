@@ -7,6 +7,7 @@
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
     "listener": "node services/eventListener.js",
+    "agent": "node services/autonomousAgent.js",
     "compile": "hardhat compile",
     "test:contracts": "hardhat test",
     "deploy:bsc": "hardhat run contracts/scripts/deploy.js --network bscTestnet",

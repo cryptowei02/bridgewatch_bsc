@@ -45,9 +45,21 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     created_at INTEGER DEFAULT (strftime('%s', 'now'))
 );
 
+-- Agent conversations table
+CREATE TABLE IF NOT EXISTS agent_conversations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    tool_calls TEXT,
+    created_at INTEGER DEFAULT (strftime('%s', 'now'))
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_tx_hash ON bridge_transactions(tx_hash);
 CREATE INDEX IF NOT EXISTS idx_from_address ON bridge_transactions(from_address);
 CREATE INDEX IF NOT EXISTS idx_to_address ON bridge_transactions(to_address);
 CREATE INDEX IF NOT EXISTS idx_timestamp ON bridge_transactions(timestamp);
 CREATE INDEX IF NOT EXISTS idx_status ON bridge_transactions(status);
+CREATE INDEX IF NOT EXISTS idx_conversation_id ON agent_conversations(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_conversation_created ON agent_conversations(created_at);
